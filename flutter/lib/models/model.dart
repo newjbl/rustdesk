@@ -2035,8 +2035,9 @@ class ImageModel with ChangeNotifier {
     final size = parent.target!.canvasModel.getSize();
     final xscale = size.width / _image!.width;
     final yscale = size.height / _image!.height;
-    // 窗口区按远端分辨率等比适配：缩到最小时整块桌面刚好完整可见
-    return min(xscale, yscale);
+    // 默认铺满屏幕（cover）：16:9 桌面放进更宽的手机屏时，
+    // 按宽度撑满、高度裁切，靠单指平移查看被裁掉的部分。
+    return max(xscale, yscale);
   }
 
   updateUserTextureRender() {
@@ -2433,6 +2434,13 @@ class CanvasModel with ChangeNotifier {
         _scale = 1.0 / _devicePixelRatio;
       } else if (_scale != 0 && style == kRemoteViewStyleCustom) {
         _scale /= _devicePixelRatio;
+      }
+    }
+    // 手机端铺满屏幕：任何缩放模式都不允许小于"填满"比例，避免四周出现黑边
+    if (isMobile && parent.target?.imageModel.image != null) {
+      final mins = parent.target!.imageModel.minScale;
+      if (_scale < mins) {
+        _scale = mins;
       }
     }
     _resetCanvasOffset(displayWidth, displayHeight);

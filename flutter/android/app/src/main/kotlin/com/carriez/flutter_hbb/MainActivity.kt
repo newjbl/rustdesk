@@ -263,8 +263,14 @@ class MainActivity : FlutterActivity() {
             WindowCompat.setDecorFitsSystemWindows(window, false)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val attrs = window.attributes
+                // 横屏时刘海/状态栏在左右两侧，SHORT_EDGES 只允许延伸到"短边"，
+                // 这里用 ALWAYS（API 30+）彻底允许画进挖孔区。
                 attrs.layoutInDisplayCutoutMode =
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                    } else {
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                    }
                 window.attributes = attrs
             }
             val controller = WindowInsetsControllerCompat(window, window.decorView)
