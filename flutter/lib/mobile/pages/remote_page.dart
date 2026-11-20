@@ -560,15 +560,7 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                                   gFFI.canvasModel.updateViewStyle();
                                 });
                               }
-                              return Container(
-                                color: MyTheme.canvasColor,
-                                child: inputModel.isPhysicalMouse.value
-                                    ? getBodyForMobile()
-                                    : RawTouchGestureDetectorRegion(
-                                        child: getBodyForMobile(),
-                                        ffi: gFFI,
-                                      ),
-                              );
+                              return getBodyForMobile();
                             }),
                   );
                 })
@@ -602,10 +594,12 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     return Material(
       elevation: 10,
       color: MyTheme.accent,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
             Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -692,7 +686,8 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                         setState(() => _showBar = !_showBar);
                       },
               )),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -709,24 +704,32 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     return Material(
       elevation: 10,
       color: MyTheme.accent,
-      child: SizedBox(
-        width: kLeftToolBarWidth,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            const SizedBox(height: 6),
-            const Icon(Icons.keyboard_alt_outlined,
-                color: Colors.white, size: 18),
-            const SizedBox(height: 6),
-            // TODO: 在这里追加快捷键按钮
-          ],
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          const Icon(Icons.keyboard_alt_outlined,
+              color: Colors.white, size: 20),
+          const SizedBox(height: 8),
+          // TODO: 在这里追加快捷键按钮
+        ],
       ),
     );
   }
 
   Widget getBodyForMobile() {
-    return Container(
+    // 固定三栏：中间窗口按远端分辨率等比确定宽度（高度铺满），
+    // 剩余宽度平分给左右功能栏；三栏宽度之后不再变化。
+    final screenSize = MediaQuery.of(context).size;
+    final rw = gFFI.canvasModel.getDisplayWidth().toDouble();
+    final rh = gFFI.canvasModel.getDisplayHeight().toDouble();
+    final remoteAspect = (rw > 0 && rh > 0) ? rw / rh : 16.0 / 9.0;
+    var centerWidth = screenSize.height * remoteAspect;
+    if (centerWidth > screenSize.width) centerWidth = screenSize.width;
+    final sideWidth = (screenSize.width - centerWidth) / 2.0;
+    // 画布尺寸注入：缩放/居中/边界计算都以中间窗口为准
+    gFFI.canvasModel.setMobileCanvasSize(Size(centerWidth, screenSize.height));
+
+    final center = Container(
         color: MyTheme.canvasColor,
         child: Stack(children: () {
           final paints = [
@@ -787,25 +790,23 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
               ffi: gFFI,
             ));
           }
-          // 右侧功能栏常驻；左侧快捷键栏仍可收起
-          if (!_showGestureHelp && gFFI.ffiModel.pi.displays.isNotEmpty) {
-            paints.add(Align(
-              alignment: Alignment.centerRight,
-              child: getBottomAppBar(),
-            ));
-          }
-          if (_showBar &&
-              !_showGestureHelp &&
-              gFFI.ffiModel.pi.displays.isNotEmpty) {
-            paints.add(Align(
-              alignment: Alignment.centerLeft,
-              child: getLeftToolBar(),
-            ));
-          }
           return paints;
         }()));
-  }
 
+    final centerWithGesture = inputModel.isPhysicalMouse.value
+        ? center
+        : RawTouchGestureDetectorRegion(child: center, ffi: gFFI);
+
+    // 固定三栏：左右栏宽度固定，中间窗口宽度固定，缩放只影响窗口内内容
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: sideWidth, child: getLeftToolBar()),
+        SizedBox(width: centerWidth, child: centerWithGesture),
+        SizedBox(width: sideWidth, child: getBottomAppBar()),
+      ],
+    );
+  }
   Widget getBodyForDesktopWithListener() {
     final ffiModel = Provider.of<FfiModel>(context);
     var paints = <Widget>[ImagePaint(ffiModel: ffiModel)];

@@ -2248,6 +2248,12 @@ class CanvasModel with ChangeNotifier {
   bool _locked = false;
   double _devicePixelRatio = 1.0;
   Size _size = Size.zero;
+  // 移动端三栏布局下，中间显示窗口的尺寸（由 remote_page 计算后注入）
+  Size? _mobileCanvasSize;
+  Size? get mobileCanvasSize => _mobileCanvasSize;
+  void setMobileCanvasSize(Size s) {
+    _mobileCanvasSize = s;
+  }
   // the tabbar over the image
   // double tabBarHeight = 0.0;
   // the window border's width
@@ -2339,6 +2345,11 @@ class CanvasModel with ChangeNotifier {
       isDesktop ? windowBorderWidth + kDragToResizeAreaPadding.bottom : 0;
 
   Size getSize() {
+    // 移动端三栏布局：画布尺寸由外部按"固定三栏"规则算好后注入，
+    // 缩放/居中/边界计算全部以中间窗口为准。
+    if (isMobile && _mobileCanvasSize != null) {
+      return _mobileCanvasSize!;
+    }
     final mediaData = MediaQueryData.fromView(ui.window);
     final size = mediaData.size;
     // If minimized, w or h may be negative here.
