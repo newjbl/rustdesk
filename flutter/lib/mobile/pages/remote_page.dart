@@ -482,11 +482,8 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     });
   }
 
-  Widget _bottomWidget() => _showGestureHelp
-      ? getGestureHelp()
-      : (_showBar && gFFI.ffiModel.pi.displays.isNotEmpty
-          ? getBottomAppBar()
-          : Offstage());
+  Widget _bottomWidget() =>
+      _showGestureHelp ? getGestureHelp() : Offstage();
 
   @override
   Widget build(BuildContext context) {
@@ -604,15 +601,16 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
 
   Widget getBottomAppBar() {
     final ffiModel = Provider.of<FfiModel>(context);
-    return BottomAppBar(
+    return Material(
       elevation: 10,
       color: MyTheme.accent,
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: <Widget>[
-          Row(
-              children: <Widget>[
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
                     IconButton(
                       color: Colors.white,
                       icon: Icon(Icons.clear),
@@ -689,14 +687,15 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                   ]),
           Obx(() => IconButton(
                 color: Colors.white,
-                icon: Icon(Icons.expand_more),
+                icon: Icon(Icons.chevron_right),
                 onPressed: gFFI.ffiModel.waitForFirstImage.isTrue
                     ? null
                     : () {
                         setState(() => _showBar = !_showBar);
                       },
               )),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -766,6 +765,15 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
           } else {
             paints.add(FloatingMouseWidgets(
               ffi: gFFI,
+            ));
+          }
+          // 快捷操作栏固定在窗口右侧，竖排显示
+          if (_showBar &&
+              !_showGestureHelp &&
+              gFFI.ffiModel.pi.displays.isNotEmpty) {
+            paints.add(Align(
+              alignment: Alignment.centerRight,
+              child: getBottomAppBar(),
             ));
           }
           return paints;
