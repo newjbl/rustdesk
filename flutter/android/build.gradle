@@ -26,8 +26,9 @@ def configureKotlinJvmTarget = { Project project, String kotlinJvmTarget ->
 
 allprojects {
     repositories {
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
         google()
-        jcenter()
         maven { url 'https://jitpack.io' }
     }
 }
@@ -53,3 +54,4 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
