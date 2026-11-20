@@ -1024,10 +1024,14 @@ class MainActivity : FlutterActivity() {
 
     override fun onStop() {
         super.onStop()
-        // 仅作控制端：FloatingWindowService 已从清单移除，这里跳过，避免抛 ActivityNotFoundException
+        val disableFloatingWindow = FFI.getLocalOption("disable-floating-window") == "Y"
+        if (!disableFloatingWindow && MainService.isReady) {
+            startService(Intent(this, FloatingWindowService::class.java))
+        }
     }
 
     override fun onStart() {
         super.onStart()
+        stopService(Intent(this, FloatingWindowService::class.java))
     }
 }
