@@ -2035,8 +2035,8 @@ class ImageModel with ChangeNotifier {
     final size = parent.target!.canvasModel.getSize();
     final xscale = size.width / _image!.width;
     final yscale = size.height / _image!.height;
-    // 不允许把画面缩到比手机屏幕还小：以"铺满屏幕"为准取较大比例
-    return max(xscale, yscale);
+    // 窗口区按远端分辨率等比适配：缩到最小时整块桌面刚好完整可见
+    return min(xscale, yscale);
   }
 
   updateUserTextureRender() {
