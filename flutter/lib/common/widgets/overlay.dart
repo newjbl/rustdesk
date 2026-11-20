@@ -560,7 +560,8 @@ class IOSDraggableState extends State<IOSDraggable> {
 
 class QualityMonitor extends StatelessWidget {
   final QualityMonitorModel qualityMonitorModel;
-  QualityMonitor(this.qualityMonitorModel);
+  final bool compact;
+  QualityMonitor(this.qualityMonitorModel, {this.compact = false});
 
   Widget _row(String info, String? value, {Color? rightColor}) {
     return Row(
@@ -568,14 +569,18 @@ class QualityMonitor extends StatelessWidget {
         Expanded(
             flex: 8,
             child: AutoSizeText(info,
-                style: TextStyle(color: Color.fromARGB(255, 210, 210, 210)),
+                style: TextStyle(
+                    color: Color.fromARGB(255, 210, 210, 210),
+                    fontSize: compact ? 9 : null),
                 textAlign: TextAlign.right,
                 maxLines: 1)),
         Spacer(flex: 1),
         Expanded(
             flex: 8,
             child: AutoSizeText(value ?? '',
-                style: TextStyle(color: rightColor ?? Colors.white),
+                style: TextStyle(
+                    color: rightColor ?? Colors.white,
+                    fontSize: compact ? 9 : null),
                 maxLines: 1)),
       ],
     );
@@ -588,8 +593,8 @@ class QualityMonitor extends StatelessWidget {
           builder: (context, qualityMonitorModel, child) => qualityMonitorModel
                   .show
               ? Container(
-                  constraints: BoxConstraints(maxWidth: 200),
-                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  padding: EdgeInsets.all(compact ? 4 : 8),
                   color: MyTheme.canvasColor.withAlpha(150),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

@@ -600,6 +600,8 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
+            QualityMonitor(gFFI.qualityMonitorModel, compact: true),
+            const SizedBox(height: 6),
             Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -677,15 +679,6 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                       },
                     ),
                   ]),
-          Obx(() => IconButton(
-                color: Colors.white,
-                icon: Icon(Icons.chevron_right),
-                onPressed: gFFI.ffiModel.waitForFirstImage.isTrue
-                    ? null
-                    : () {
-                        setState(() => _showBar = !_showBar);
-                      },
-              )),
             ],
           ),
         ),
@@ -734,11 +727,6 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
         child: Stack(children: () {
           final paints = [
             ImagePaint(ffiModel: gFFI.ffiModel),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: QualityMonitor(gFFI.qualityMonitorModel),
-            ),
             Obx(() {
               final chatKeyboardRequested =
                   gFFI.chatModel.softKeyboardRequested.value;
