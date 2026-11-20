@@ -705,6 +705,28 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
       !gFFI.canvasModel.cursorEmbedded &&
       !gFFI.inputModel.relativeMouseMode.value;
 
+  // 左侧快捷键面板：先占位，后续在 _leftShortcutItems 里补充具体按键。
+  static const double kLeftToolBarWidth = 48;
+  Widget getLeftToolBar() {
+    return Material(
+      elevation: 10,
+      color: MyTheme.accent,
+      child: SizedBox(
+        width: kLeftToolBarWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const SizedBox(height: 6),
+            const Icon(Icons.keyboard_alt_outlined,
+                color: Colors.white, size: 18),
+            const SizedBox(height: 6),
+            // TODO: 在这里追加快捷键按钮
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget getBodyForMobile() {
     return Container(
         color: MyTheme.canvasColor,
@@ -774,6 +796,10 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
             paints.add(Align(
               alignment: Alignment.centerRight,
               child: getBottomAppBar(),
+            ));
+            paints.add(Align(
+              alignment: Alignment.centerLeft,
+              child: getLeftToolBar(),
             ));
           }
           return paints;
