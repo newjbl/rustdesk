@@ -96,7 +96,9 @@ fn main() {
     #[cfg(all(windows, feature = "inline"))]
     build_manifest();
     #[cfg(windows)]
-    build_windows();
+    if std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default() == "windows" {
+        build_windows();
+    }
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
     if target_os == "macos" {
         #[cfg(target_os = "macos")]

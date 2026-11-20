@@ -41,10 +41,32 @@ if(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm" AND VCPKG_TARGET_IS_LINUX)
   set(aom_target_cpu "-DENABLE_NEON=OFF")
 endif()
 
+# aom's aom_configure.cmake falls back to the GNU assembler named "as" on every
+# platform except Darwin/Windows. The NDK ships no "as", so cross-building from a
+# Windows host fails at enable_language(ASM). Point it at the NDK clang instead.
+set(aom_android_asm "")
+if(VCPKG_TARGET_IS_ANDROID)
+    if(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
+        set(aom_android_triple "aarch64-linux-android")
+    elseif(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm")
+        set(aom_android_triple "armv7a-linux-androideabi")
+    elseif(VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
+        set(aom_android_triple "x86_64-linux-android")
+    else()
+        set(aom_android_triple "i686-linux-android")
+    endif()
+    file(TO_CMAKE_PATH "$ENV{ANDROID_NDK_HOME}" aom_android_ndk)
+    set(aom_android_asm
+        "-DCMAKE_ASM_COMPILER=${aom_android_ndk}/toolchains/llvm/prebuilt/windows-x86_64/bin/clang.exe"
+        "-DCMAKE_ASM_FLAGS=--target=${aom_android_triple}${VCPKG_CMAKE_SYSTEM_VERSION}"
+    )
+endif()
+
 vcpkg_cmake_configure(
     SOURCE_PATH ${SOURCE_PATH}
     OPTIONS
         ${aom_target_cpu}
+        ${aom_android_asm}
         -DENABLE_DOCS=OFF
         -DENABLE_EXAMPLES=OFF
         -DENABLE_TESTDATA=OFF
