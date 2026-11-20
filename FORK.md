@@ -77,8 +77,32 @@ git diff --stat upstream/master...custom        # 我们改了多少文件
 
 ## 改动清单（截至 2026-11-20）
 
+### 构建与环境
+
 | 提交 | 内容 |
 |---|---|
 | `build: 修复 Windows 主机交叉编译 Android…` | `build.rs` 目标判断、`res/vcpkg/aom` 汇编器 |
 | `build: 国内构建改用镜像源` | gradle 发行包 / maven 镜像 |
-| `android: 白标为独立包名 RDClient` | `applicationId`、`android:label` |
+
+### 白标
+
+| 提交 | 内容 |
+|---|---|
+| `android: 白标为独立包名 RDClient` | `applicationId` = com.jbl.rdclient、`android:label` |
+| `android: 改为纯控制端…` | 移除无障碍/投屏/录音/开机自启；`conn-type=outgoing` |
+| `android: 恢复悬浮窗…` | 恢复 `SYSTEM_ALERT_WINDOW`（控制端需要），摄像头仍禁用 |
+
+### Android 会话界面（自定义重点）
+
+| 提交 | 内容 |
+|---|---|
+| `android: 默认横屏（sensorLandscape）` | 锁定横屏，随重力翻转 180° |
+| `mobile: 会话快捷操作栏移到窗口右侧竖排` | 底栏 → 右栏 |
+| `mobile: 手势模型改为 单指平移 / 双指滚动 / 三指拖选` | 手势重映射 |
+| `mobile: 键盘辅助面板默认收起并缩小` | `_more=false`，按钮/字号收紧，展开限高可滚 |
+| `mobile: 左侧增加快捷键面板占位列` | 左栏占位，待填内容 |
+| `android: 窗口层真全屏…` | `setDecorFitsSystemWindows(false)` + 隐藏系统栏 + 刘海延伸 |
+| `mobile: 画面铺满屏幕（cover）+ 刘海区强制延伸` | `minScale=max()`，`LAYOUT_ALWAYS` |
+| `mobile: 会话页改为固定三栏布局` | 中栏宽度 = 屏高×远端比例，剩余平分给左右栏 |
+| `mobile: 中间显示窗口加 ClipRect` | 平移/缩放不再溢出到两侧栏 |
+
