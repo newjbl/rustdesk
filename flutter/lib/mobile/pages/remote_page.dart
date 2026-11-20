@@ -729,7 +729,7 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     // 画布尺寸注入：缩放/居中/边界计算都以中间窗口为准
     gFFI.canvasModel.setMobileCanvasSize(Size(centerWidth, screenSize.height));
 
-    final center = Container(
+    final center = ClipRect(child: Container(
         color: MyTheme.canvasColor,
         child: Stack(children: () {
           final paints = [
@@ -791,7 +791,7 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
             ));
           }
           return paints;
-        }()));
+        }())));
 
     final centerWithGesture = inputModel.isPhysicalMouse.value
         ? center
