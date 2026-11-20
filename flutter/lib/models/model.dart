@@ -2035,7 +2035,8 @@ class ImageModel with ChangeNotifier {
     final size = parent.target!.canvasModel.getSize();
     final xscale = size.width / _image!.width;
     final yscale = size.height / _image!.height;
-    return min(xscale, yscale) / 1.5;
+    // 不允许把画面缩到比手机屏幕还小：以"铺满屏幕"为准取较大比例
+    return max(xscale, yscale);
   }
 
   updateUserTextureRender() {
@@ -2710,10 +2711,33 @@ class CanvasModel with ChangeNotifier {
 
   panX(double dx) {
     _x += dx;
+    _clampCanvasOffset();
     if (isMobile) {
       isMobileCanvasChanged = true;
     }
     notifyListeners();
+  }
+
+  /// 限制画布偏移，保证画面不会被拖出可视区域：
+  /// 画面比屏幕大时贴边停住，比屏幕小时居中。
+  void _clampCanvasOffset() {
+    final img = parent.target?.imageModel.image;
+    if (img == null) return;
+    final size = getSize();
+    final w = img.width * _scale;
+    final h = img.height * _scale;
+    if (w >= size.width) {
+      if (_x > 0) _x = 0;
+      if (_x < size.width - w) _x = size.width - w;
+    } else {
+      _x = (size.width - w) / 2;
+    }
+    if (h >= size.height) {
+      if (_y > 0) _y = 0;
+      if (_y < size.height - h) _y = size.height - h;
+    } else {
+      _y = (size.height - h) / 2;
+    }
   }
 
   resetOffset() {
@@ -2727,6 +2751,7 @@ class CanvasModel with ChangeNotifier {
 
   panY(double dy) {
     _y += dy;
+    _clampCanvasOffset();
     if (isMobile) {
       isMobileCanvasChanged = true;
     }

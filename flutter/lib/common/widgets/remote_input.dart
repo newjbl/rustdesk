@@ -360,37 +360,11 @@ class _RawTouchGestureDetectorRegionState
       return;
     }
     if (handleTouch) {
-      if (lastTapDownDetails != null) {
-        await ffi.cursorModel.move(lastTapDownDetails.localPosition.dx,
-            lastTapDownDetails.localPosition.dy);
-      }
-      if (ffi.cursorModel.shouldBlock(d.localPosition.dx, d.localPosition.dy)) {
-        return;
-      }
-      if (!ffi.cursorModel.isInRemoteRect(d.localPosition)) {
-        return;
-      }
-
+      // 单指拖动 = 移动画面（不向远端发送鼠标事件）
       _touchModePanStarted = true;
       if (isDesktop || isWebDesktop) {
         ffi.cursorModel.trySetRemoteWindowCoords();
       }
-
-      // Workaround for the issue that the first pan event is sent a long time after the start event.
-      // If the time interval between the start event and the first pan event is less than 500ms,
-      // we consider to use the long press position as the start position.
-      //
-      // TODO: We should find a better way to send the first pan event as soon as possible.
-      if (DateTime.now().millisecondsSinceEpoch - _cacheLongPressPositionTs <
-          500) {
-        await ffi.cursorModel
-            .move(_cacheLongPressPosition.dx, _cacheLongPressPosition.dy);
-      }
-      // In relative mouse mode, skip mouse down - only send movement via sendMobileRelativeMouseMove
-      if (!inputModel.relativeMouseMode.value) {
-        await inputModel.sendMouse('down', MouseButtons.left);
-      }
-      await ffi.cursorModel.move(d.localPosition.dx, d.localPosition.dy);
     } else {
       final offset = ffi.cursorModel.offset;
       final cursorX = offset.dx;
@@ -408,10 +382,14 @@ class _RawTouchGestureDetectorRegionState
     if (isNotTouchBasedDevice()) {
       return;
     }
-    if (ffi.cursorModel.shouldBlock(d.localPosition.dx, d.localPosition.dy)) {
+    if (handleTouch) {
+      // 单指拖动 = 平移画面
+      if (canvasLocked) return;
+      ffi.canvasModel.panX(d.delta.dx);
+      ffi.canvasModel.panY(d.delta.dy);
       return;
     }
-    if (handleTouch && !_touchModePanStarted) {
+    if (ffi.cursorModel.shouldBlock(d.localPosition.dx, d.localPosition.dy)) {
       return;
     }
     // In relative mouse mode, send delta directly without position tracking.
@@ -429,12 +407,6 @@ class _RawTouchGestureDetectorRegionState
     }
     if (isDesktop || isWebDesktop) {
       ffi.cursorModel.clearRemoteWindowCoords();
-    }
-    if (handleTouch) {
-      // In relative mouse mode, skip mouse up - matches the skipped mouse down in onOneFingerPanStart
-      if (!inputModel.relativeMouseMode.value) {
-        await inputModel.sendMouse('up', MouseButtons.left);
-      }
     }
   }
 
@@ -487,11 +459,22 @@ class _RawTouchGestureDetectorRegionState
                     .toJson()));
       }
     } else {
-      // mobile
+      // mobile：双指缩放；不再平移画面，改为竖向滚动远端
+      final prevScale = _scale;
       ffi.canvasModel.updateScale(d.scale / _scale, d.focalPoint);
       _scale = d.scale;
-      ffi.canvasModel.panX(d.focalPointDelta.dx);
-      ffi.canvasModel.panY(d.focalPointDelta.dy);
+      // 只有在没有明显捏合缩放时才当滚动处理，避免缩放时误触发
+      if ((d.scale - prevScale).abs() < 0.01) {
+        _mouseScrollIntegral += d.focalPointDelta.dy / 6;
+        while (_mouseScrollIntegral > 1) {
+          inputModel.scroll(1);
+          _mouseScrollIntegral -= 1;
+        }
+        while (_mouseScrollIntegral < -1) {
+          inputModel.scroll(-1);
+          _mouseScrollIntegral += 1;
+        }
+      }
     }
   }
 
@@ -517,18 +500,28 @@ class _RawTouchGestureDetectorRegionState
   }
 
   get onHoldDragCancel => null;
-  get onThreeFingerVerticalDragUpdate => ffi.ffiModel.isPeerAndroid
-      ? null
-      : (d) {
-          _mouseScrollIntegral += d.delta.dy / 4;
-          if (_mouseScrollIntegral > 1) {
-            inputModel.scroll(1);
-            _mouseScrollIntegral = 0;
-          } else if (_mouseScrollIntegral < -1) {
-            inputModel.scroll(-1);
-            _mouseScrollIntegral = 0;
-          }
-        };
+
+  // 三指拖动 = 按住左键拖拽（选中/移动内容）
+  onThreeFingerDragStart(DragStartDetails d) async {
+    if (isNotTouchBasedDevice() || !handleTouch) return;
+    if (ffi.cursorModel.shouldBlock(d.globalPosition.dx, d.globalPosition.dy)) {
+      return;
+    }
+    _touchModePanStarted = true;
+    await ffi.cursorModel.move(d.globalPosition.dx, d.globalPosition.dy);
+    await inputModel.sendMouse('down', MouseButtons.left);
+  }
+
+  onThreeFingerDragUpdate(DragUpdateDetails d) async {
+    if (isNotTouchBasedDevice() || !handleTouch) return;
+    await ffi.cursorModel.updatePan(d.delta, d.localPosition, true);
+  }
+
+  onThreeFingerDragEnd(DragEndDetails d) async {
+    if (isNotTouchBasedDevice() || !handleTouch) return;
+    _touchModePanStarted = false;
+    await inputModel.sendMouse('up', MouseButtons.left);
+  }
 
   makeGestures(BuildContext context) {
     return <Type, GestureRecognizerFactory>{
@@ -585,7 +578,9 @@ class _RawTouchGestureDetectorRegionState
           ..onTwoFingerScaleStart = onTwoFingerScaleStart
           ..onTwoFingerScaleUpdate = onTwoFingerScaleUpdate
           ..onTwoFingerScaleEnd = onTwoFingerScaleEnd
-          ..onThreeFingerVerticalDragUpdate = onThreeFingerVerticalDragUpdate;
+          ..onThreeFingerVerticalDragStart = onThreeFingerDragStart
+          ..onThreeFingerVerticalDragUpdate = onThreeFingerDragUpdate
+          ..onThreeFingerVerticalDragEnd = onThreeFingerDragEnd;
       }),
     };
   }
