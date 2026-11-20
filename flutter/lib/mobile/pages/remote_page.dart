@@ -1003,7 +1003,7 @@ class KeyHelpTools extends StatefulWidget {
 }
 
 class _KeyHelpToolsState extends State<KeyHelpTools> {
-  var _more = true;
+  var _more = false;
   var _fn = false;
   var _pin = false;
   final _keyboardVisibilityController = KeyboardVisibilityController();
@@ -1016,7 +1016,7 @@ class _KeyHelpToolsState extends State<KeyHelpTools> {
     return TextButton(
         style: TextButton.styleFrom(
           minimumSize: Size(0, 0),
-          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 9.75),
+          padding: EdgeInsets.symmetric(vertical: 5, horizontal: 7),
           //adds padding inside the button
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           //limits the touch area to the button area
@@ -1026,9 +1026,9 @@ class _KeyHelpToolsState extends State<KeyHelpTools> {
           backgroundColor: active == true ? MyTheme.accent80 : null,
         ),
         child: icon != null
-            ? Icon(icon, size: 14, color: Colors.white)
+            ? Icon(icon, size: 13, color: Colors.white)
             : Text(translate(text),
-                style: TextStyle(color: Colors.white, fontSize: 11)),
+                style: TextStyle(color: Colors.white, fontSize: 10)),
         onPressed: onPressed);
   }
 
@@ -1199,15 +1199,21 @@ class _KeyHelpToolsState extends State<KeyHelpTools> {
         key: _key,
         color: Color(0xAA000000),
         padding: EdgeInsets.only(
-            top: _keyboardVisibilityController.isVisible ? 24 : 4, bottom: 8),
-        child: Wrap(
-          spacing: space,
-          runSpacing: space,
-          children: <Widget>[SizedBox(width: 9999)] +
-              modifiers +
-              keys +
-              (_fn ? fn : []) +
-              (_more ? more : []),
+            top: _keyboardVisibilityController.isVisible ? 8 : 4, bottom: 4),
+        child: ConstrainedBox(
+          // 展开更多按键时限制高度并可滚动，避免面板把屏幕占满
+          constraints: BoxConstraints(maxHeight: size.height * 0.38),
+          child: SingleChildScrollView(
+            child: Wrap(
+              spacing: space,
+              runSpacing: space,
+              children: <Widget>[SizedBox(width: 9999)] +
+                  modifiers +
+                  keys +
+                  (_fn ? fn : []) +
+                  (_more ? more : []),
+            ),
+          ),
         ));
   }
 }
