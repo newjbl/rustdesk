@@ -2516,6 +2516,14 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
 }
 
 pub fn load_custom_client() {
+    // 本 fork 的 Android 构建只作为控制端（用手机控制电脑），不充当被控端。
+    // 置 conn-type=outgoing 后，UI 会隐藏"服务器"页并隐藏被控相关设置。
+    #[cfg(target_os = "android")]
+    config::HARD_SETTINGS
+        .write()
+        .unwrap()
+        .insert("conn-type".to_owned(), "outgoing".to_owned());
+
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());

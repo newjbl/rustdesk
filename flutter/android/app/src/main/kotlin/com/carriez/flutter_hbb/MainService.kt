@@ -261,7 +261,6 @@ class MainService : Service() {
 
     override fun onDestroy() {
         checkMediaPermission()
-        stopService(Intent(this, FloatingWindowService::class.java))
         super.onDestroy()
     }
 
@@ -348,19 +347,8 @@ class MainService : Service() {
         Log.d("whichService", "this service: ${Thread.currentThread()}")
         super.onStartCommand(intent, flags, startId)
         if (intent?.action == ACT_INIT_MEDIA_PROJECTION_AND_SERVICE) {
-            if (intent.getBooleanExtra(EXT_INIT_FROM_BOOT, false)) {
-                FFI.startService()
-            }
-            Log.d(logTag, "service starting: ${startId}:${Thread.currentThread()}")
-            val mediaProjectionManager =
-                getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-
-            intent.getParcelableExtra<Intent>(EXT_MEDIA_PROJECTION_RES_INTENT)?.let {
-                replaceMediaProjection(mediaProjectionManager, it)
-            } ?: let {
-                Log.d(logTag, "getParcelableExtra intent null, invoke requestMediaProjection")
-                requestMediaProjection()
-            }
+            // 仅作控制端：不申请屏幕录制（MANIFEST 已移除 mediaProjection 前台服务类型与权限）。
+            Log.d(logTag, "media projection disabled in this build, ignoring action")
         }
         return START_NOT_STICKY // don't use sticky (auto restart), the new service (from auto restart) will lose control
     }
@@ -687,7 +675,6 @@ class MainService : Service() {
         microphoneForegroundService = false
         checkMediaPermission()
         stopForeground(true)
-        stopService(Intent(this, FloatingWindowService::class.java))
         stopSelf()
     }
 
@@ -870,18 +857,12 @@ class MainService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun foregroundServiceType(): Int {
-        var serviceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
+        // 仅作控制端：不再声明 mediaProjection / microphone 前台服务类型，
+        // 这里也绝不能带上它们，否则 Android 14+ 会抛 SecurityException。
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            // Keep a valid FGS type while the unattended host is idle and no capture type is active.
-            serviceType = serviceType or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            return ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
         }
-        if (mediaProjectionForegroundService) {
-            serviceType = serviceType or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && microphoneForegroundService) {
-            serviceType = serviceType or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-        }
-        return serviceType
+        return ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE
     }
 
     private fun setMediaProjectionForegroundService(enabled: Boolean): Boolean {
