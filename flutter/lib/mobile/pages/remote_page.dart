@@ -768,15 +768,19 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     final rw = gFFI.canvasModel.getDisplayWidth().toDouble();
     final rh = gFFI.canvasModel.getDisplayHeight().toDouble();
     final remoteAspect = (rw > 0 && rh > 0) ? rw / rh : 16.0 / 9.0;
-    var centerWidth = screenSize.height * remoteAspect;
+    // 屏幕最底部约 10dp 是系统手势区，触摸会被系统取消（实测光标下限停在
+    // y=1051，到不了 1080）。这里给中间窗口留出底部安全边，让远端画面的
+    // 最底一行落在死区之上；画面按剩余高度等比缩放，比例仍然正确。
+    final bottomInset = MediaQuery.of(context).padding.bottom + 24.0;
+    final canvasHeight = (screenSize.height - bottomInset).clamp(1.0, screenSize.height);
+    var centerWidth = canvasHeight * remoteAspect;
     if (centerWidth > screenSize.width) centerWidth = screenSize.width;
     final sideWidth = (screenSize.width - centerWidth) / 2.0;
     // 画布尺寸注入：缩放/居中/边界计算都以中间窗口为准
-    final canvasSize = Size(centerWidth, screenSize.height);
+    final canvasSize = Size(centerWidth, canvasHeight);
     if (gFFI.canvasModel.mobileCanvasSize != canvasSize) {
       gFFI.canvasModel.setMobileCanvasSize(canvasSize);
-      // 尺寸变了必须按新尺寸重算缩放：否则 scale 仍按全屏宽度算，
-      // 画面会超出中间窗口，远端画面下方/右侧区域点在窗口外而失效。
+      // 尺寸变了必须按新尺寸重算缩放，否则画面会超出中间窗口
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) gFFI.canvasModel.updateViewStyle();
       });
@@ -853,7 +857,14 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(width: sideWidth, child: getLeftToolBar()),
-        SizedBox(width: centerWidth, child: centerWithGesture),
+        SizedBox(
+          width: centerWidth,
+          // 底部让出系统手势区：否则画面最底一行点不到
+          child: Padding(
+            padding: EdgeInsets.only(bottom: bottomInset),
+            child: centerWithGesture,
+          ),
+        ),
         SizedBox(width: sideWidth, child: getBottomAppBar()),
       ],
     );

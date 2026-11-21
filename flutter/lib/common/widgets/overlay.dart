@@ -608,7 +608,8 @@ class QualityMonitor extends StatelessWidget {
     final ffi = m.parent.target;
     if (ffi == null) return const [];
     final c = ffi.canvasModel;
-    final size = c.mobileCanvasSize;
+    // 用 getSize()（实际生效的画布尺寸）而不是注入值，便于确认两者是否一致
+    final size = c.getSize();
     final rect = ffi.ffiModel.rect;
     final loc = ffi.cursorModel.dbgTapLocal;
     final rem = ffi.cursorModel.dbgTapRemote;
@@ -620,9 +621,7 @@ class QualityMonitor extends StatelessWidget {
     return [
       line("s=${c.scale.toStringAsFixed(3)} "
           "o=${c.x.toStringAsFixed(0)},${c.y.toStringAsFixed(0)}"),
-      line(size == null
-          ? "win -"
-          : "win ${size.width.toStringAsFixed(0)}x${size.height.toStringAsFixed(0)}"),
+      line("win ${size.width.toStringAsFixed(0)}x${size.height.toStringAsFixed(0)}"),
       line(rect == null
           ? "rect -"
           : "rect ${rect.width.toInt()}x${rect.height.toInt()}"),
