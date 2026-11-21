@@ -732,16 +732,21 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     final rw = gFFI.canvasModel.getDisplayWidth().toDouble();
     final rh = gFFI.canvasModel.getDisplayHeight().toDouble();
     final remoteAspect = (rw > 0 && rh > 0) ? rw / rh : 16.0 / 9.0;
-    var centerWidth = screenSize.height * remoteAspect;
+    // 屏幕最底部约 10dp 是系统手势区，触摸会被系统取消（实测光标下限停在
+    // y=1051，到不了 1080）。给中间窗口留底部安全边，让画面最底一行避开死区。
+    final bottomInset = MediaQuery.of(context).padding.bottom + 24.0;
+    final canvasHeight =
+        (screenSize.height - bottomInset).clamp(1.0, screenSize.height);
+    var centerWidth = canvasHeight * remoteAspect;
     if (centerWidth > screenSize.width) centerWidth = screenSize.width;
     final sideWidth = (screenSize.width - centerWidth) / 2.0;
     // 画布尺寸注入：缩放/居中/边界计算都以中间窗口为准
-    gFFI.canvasModel.setMobileCanvasSize(Size(centerWidth, screenSize.height));
-
+    gFFI.canvasModel.setMobileCanvasSize(Size(centerWidth, canvasHeight));
     final center = ClipRect(child: Container(
         color: MyTheme.canvasColor,
         child: Stack(children: () {
           final paints = [
+
             ImagePaint(ffiModel: gFFI.ffiModel),
             Obx(() {
               final chatKeyboardRequested =
@@ -796,17 +801,25 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
           }
           return paints;
         }())));
-
+    // 触摸位置指示：手指按下的地方画一个黄点
+    final centerWithIndicator = TouchIndicator(child: center);
     final centerWithGesture = inputModel.isPhysicalMouse.value
-        ? center
-        : RawTouchGestureDetectorRegion(child: center, ffi: gFFI);
-
+        ? centerWithIndicator
+        : RawTouchGestureDetectorRegion(
+            child: centerWithIndicator, ffi: gFFI);
     // 固定三栏：左右栏宽度固定，中间窗口宽度固定，缩放只影响窗口内内容
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(width: sideWidth, child: getLeftToolBar()),
-        SizedBox(width: centerWidth, child: centerWithGesture),
+        SizedBox(
+          width: centerWidth,
+          // 底部让出系统手势区，否则画面最底一行点不到
+          child: Padding(
+            padding: EdgeInsets.only(bottom: bottomInset),
+            child: centerWithGesture,
+          ),
+        ),
         SizedBox(width: sideWidth, child: getBottomAppBar()),
       ],
     );
@@ -1639,5 +1652,74 @@ class FABLocation extends FloatingActionButtonLocation {
   Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
     final offset = location.getOffset(scaffoldGeometry);
     return Offset(offset.dx + offsetX, offset.dy + offsetY);
+  }
+}
+
+
+/// 触摸位置指示器：手指按下的位置画一个黄色圆点并淡出，
+/// 便于核对"手指点到的位置"与"远端光标落点"是否一致。
+class TouchIndicator extends StatefulWidget {
+  final Widget child;
+  const TouchIndicator({Key? key, required this.child}) : super(key: key);
+
+  @override
+  State<TouchIndicator> createState() => _TouchIndicatorState();
+}
+
+class _TouchIndicatorState extends State<TouchIndicator>
+    with SingleTickerProviderStateMixin {
+  static const double _size = 22;
+  Offset? _pos;
+  late final AnimationController _fade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+    value: 0,
+  );
+
+  void _onPointerDown(PointerDownEvent e) {
+    setState(() => _pos = e.localPosition);
+    _fade.value = 1;
+    _fade.reverse();
+  }
+
+  @override
+  void dispose() {
+    _fade.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pos = _pos;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _onPointerDown,
+      child: Stack(
+        // expand：否则子控件拿到宽松约束，画面会塌缩成 0 尺寸（黑屏）
+        fit: StackFit.expand,
+        children: [
+          widget.child,
+          if (pos != null)
+            Positioned(
+              left: pos.dx - _size / 2,
+              top: pos.dy - _size / 2,
+              child: IgnorePointer(
+                child: FadeTransition(
+                  opacity: _fade,
+                  child: Container(
+                    width: _size,
+                    height: _size,
+                    decoration: BoxDecoration(
+                      color: Colors.yellow.withOpacity(0.85),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black54, width: 1),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
