@@ -760,7 +760,11 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
   Widget getBodyForMobile() {
     // 固定三栏：中间窗口按远端分辨率等比确定宽度（高度铺满），
     // 剩余宽度平分给左右功能栏；三栏宽度之后不再变化。
-    final screenSize = MediaQuery.of(context).size;
+    // 用 LayoutBuilder 取真实可用尺寸：MediaQuery.size 是整屏尺寸，
+    // 若被系统栏/键盘 inset 占去一条，注入的画布会偏高，
+    // 导致远端画面底部一条落在窗口外、点不到。
+    return LayoutBuilder(builder: (context, constraints) {
+    final screenSize = constraints.biggest;
     final rw = gFFI.canvasModel.getDisplayWidth().toDouble();
     final rh = gFFI.canvasModel.getDisplayHeight().toDouble();
     final remoteAspect = (rw > 0 && rh > 0) ? rw / rh : 16.0 / 9.0;
@@ -850,7 +854,9 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
         SizedBox(width: sideWidth, child: getBottomAppBar()),
       ],
     );
+    });
   }
+
   Widget getBodyForDesktopWithListener() {
     final ffiModel = Provider.of<FfiModel>(context);
     var paints = <Widget>[ImagePaint(ffiModel: ffiModel)];
