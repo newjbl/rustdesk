@@ -163,8 +163,13 @@ class _RawTouchGestureDetectorRegionState
       return;
     }
     if (handleTouch) {
-      final isMoved =
+      var isMoved =
           await ffi.cursorModel.move(d.localPosition.dx, d.localPosition.dy);
+      if (!isMoved) {
+        // 画面边缘映射到远端之外时会被丢弃，夹取到最近边界点再点击
+        isMoved = await ffi.cursorModel
+            .moveClamped(d.localPosition.dx, d.localPosition.dy);
+      }
       if (isMoved) {
         // If pan already handled 'down', don't send it again.
         if (lastTapDownDetails != null && !_touchModePanStarted) {

@@ -607,8 +607,12 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                 children: <Widget>[
                     IconButton(
                       color: Colors.white,
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 20,
+                      iconSize: 18,
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(36, 25),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       icon: Icon(Icons.clear),
                       onPressed: () {
                         clientClose(sessionId, gFFI);
@@ -616,8 +620,12 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                     ),
                     IconButton(
                       color: Colors.white,
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 20,
+                      iconSize: 18,
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(36, 25),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       icon: Icon(Icons.tv),
                       onPressed: () {
                         setState(() => _showEdit = false);
@@ -631,14 +639,22 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                           ? [
                               IconButton(
                                   color: Colors.white,
-                                  visualDensity: VisualDensity.compact,
-                                  iconSize: 20,
+                                  iconSize: 18,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(36, 25),
+                                    padding: EdgeInsets.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
                                   icon: Icon(Icons.keyboard),
                                   onPressed: openKeyboard),
                               IconButton(
                                 color: Colors.white,
-                                visualDensity: VisualDensity.compact,
-                                iconSize: 20,
+                                iconSize: 18,
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(36, 25),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
                                 icon: const Icon(Icons.build),
                                 onPressed: () => gFFI.dialogManager
                                     .toggleMobileActionsOverlay(ffi: gFFI),
@@ -647,14 +663,22 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                           : [
                               IconButton(
                                   color: Colors.white,
-                                  visualDensity: VisualDensity.compact,
-                                  iconSize: 20,
+                                  iconSize: 18,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: const Size(36, 25),
+                                    padding: EdgeInsets.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
                                   icon: Icon(Icons.keyboard),
                                   onPressed: openKeyboard),
                               IconButton(
                                 color: Colors.white,
-                                visualDensity: VisualDensity.compact,
-                                iconSize: 20,
+                                iconSize: 18,
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(36, 25),
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
                                 icon: Icon(gFFI.ffiModel.touchMode
                                     ? Icons.touch_app
                                     : Icons.mouse),
@@ -670,8 +694,12 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                                   "get_value", "KEY_IS_SUPPORT_VOICE_CALL"),
                               hasData: (isSupportVoiceCall) => IconButton(
                                     color: Colors.white,
-                                    visualDensity: VisualDensity.compact,
-                                    iconSize: 20,
+                                    iconSize: 18,
+                                    style: IconButton.styleFrom(
+                                      minimumSize: const Size(36, 25),
+                                      padding: EdgeInsets.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
                                     icon: isAndroid && isSupportVoiceCall
                                         ? SvgPicture.asset('assets/chat.svg',
                                             colorFilter: ColorFilter.mode(
@@ -686,8 +714,12 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
                   [
                     IconButton(
                       color: Colors.white,
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 20,
+                      iconSize: 18,
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(36, 25),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       icon: Icon(Icons.more_vert),
                       onPressed: () {
                         setState(() => _showEdit = false);
