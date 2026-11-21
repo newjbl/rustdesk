@@ -1668,7 +1668,7 @@ class TouchIndicator extends StatefulWidget {
 
 class _TouchIndicatorState extends State<TouchIndicator>
     with SingleTickerProviderStateMixin {
-  static const double _size = 22;
+  static const double _size = 12;
   Offset? _pos;
   late final AnimationController _fade = AnimationController(
     vsync: this,
