@@ -456,20 +456,19 @@ class _RawTouchGestureDetectorRegionState
       }
     } else {
       // mobile：双指缩放；不再平移画面，改为竖向滚动远端
-      final prevScale = _scale;
       ffi.canvasModel.updateScale(d.scale / _scale, d.focalPoint);
       _scale = d.scale;
-      // 只有在没有明显捏合缩放时才当滚动处理，避免缩放时误触发
-      if ((d.scale - prevScale).abs() < 0.01) {
-        _mouseScrollIntegral += d.focalPointDelta.dy / 6;
-        while (_mouseScrollIntegral > 1) {
-          inputModel.scroll(1);
-          _mouseScrollIntegral -= 1;
-        }
-        while (_mouseScrollIntegral < -1) {
-          inputModel.scroll(-1);
-          _mouseScrollIntegral += 1;
-        }
+      // 双指竖向位移始终换算成滚轮：捏合时焦点几乎不动，不会误触发；
+      // 平拖时焦点跟随移动，按位移发滚动。不要用"缩放变化<阈值"来门控，
+      // 否则轻微抖动会让整段滑动都不滚动。
+      _mouseScrollIntegral += d.focalPointDelta.dy / 6;
+      while (_mouseScrollIntegral > 1) {
+        inputModel.scroll(1);
+        _mouseScrollIntegral -= 1;
+      }
+      while (_mouseScrollIntegral < -1) {
+        inputModel.scroll(-1);
+        _mouseScrollIntegral += 1;
       }
     }
   }

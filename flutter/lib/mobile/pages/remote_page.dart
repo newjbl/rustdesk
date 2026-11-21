@@ -792,14 +792,21 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
         child: Stack(children: () {
           final paints = [
             ImagePaint(ffiModel: gFFI.ffiModel),
-            Obx(() {
-              final chatKeyboardRequested =
-                  gFFI.chatModel.softKeyboardRequested.value;
-              return KeyHelpTools(
-                  keyboardIsVisible: keyboardVisibilityController.isVisible &&
-                      (_showEdit || chatKeyboardRequested),
-                  showGestureHelp: _showGestureHelp);
-            }),
+            // 键盘辅助面板贴在画面底部；键盘弹出时抬到输入法上方
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              child: Obx(() {
+                final chatKeyboardRequested =
+                    gFFI.chatModel.softKeyboardRequested.value;
+                return KeyHelpTools(
+                    keyboardIsVisible:
+                        keyboardVisibilityController.isVisible &&
+                            (_showEdit || chatKeyboardRequested),
+                    showGestureHelp: _showGestureHelp);
+              }),
+            ),
             SizedBox(
               width: 0,
               height: 0,
