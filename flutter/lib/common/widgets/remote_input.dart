@@ -58,6 +58,8 @@ bool isSpecialHoldDragActive = false;
 // Cache the last focal point to calculate deltas in special hold-drag mode.
 Offset _lastSpecialHoldDragFocalPoint = Offset.zero;
 
+  // 双指手势模式：0=未定 1=滚动 2=缩放。一次手势内锁定，避免中途抖动换来换去
+  int _twoFingerMode = 0;
 class RawTouchGestureDetectorRegion extends StatefulWidget {
   final Widget child;
   final FFI ffi;
@@ -421,6 +423,7 @@ class _RawTouchGestureDetectorRegionState
   // scale + pan event
   onTwoFingerScaleStart(ScaleStartDetails d) {
     _lastTapDownDetails = null;
+    _twoFingerMode = 0;
     if (isNotTouchBasedDevice()) {
       return;
     }
@@ -459,12 +462,18 @@ class _RawTouchGestureDetectorRegionState
                     .toJson()));
       }
     } else {
-      // mobile：竖向两指拖动 = 滚动；捏合或其他方向 = 缩放
-      final delta = d.focalPointDelta;
-      final scaleChanged = (d.scale - _scale).abs() > 0.02;
-      final isVertical = delta.dy.abs() >= delta.dx.abs();
-      if (!scaleChanged && isVertical) {
-        _mouseScrollIntegral += delta.dy / 6;
+      // mobile：只有"两指反向移动"（间距变化）才缩放，其余一律上下滚动
+      if (_twoFingerMode == 0) {
+        if ((d.scale - 1.0).abs() > 0.05) {
+          _twoFingerMode = 2; // 捏合 -> 缩放
+        } else if (d.focalPointDelta.distance > 2) {
+          _twoFingerMode = 1; // 平行移动 -> 滚动
+        }
+      }
+      if (_twoFingerMode == 2) {
+        ffi.canvasModel.updateScale(d.scale / _scale, d.focalPoint);
+      } else if (_twoFingerMode == 1) {
+        _mouseScrollIntegral += d.focalPointDelta.dy / 6;
         while (_mouseScrollIntegral > 1) {
           inputModel.scroll(1);
           _mouseScrollIntegral -= 1;
@@ -473,13 +482,10 @@ class _RawTouchGestureDetectorRegionState
           inputModel.scroll(-1);
           _mouseScrollIntegral += 1;
         }
-      } else {
-        ffi.canvasModel.updateScale(d.scale / _scale, d.focalPoint);
       }
       _scale = d.scale;
     }
   }
-
   onTwoFingerScaleEnd(ScaleEndDetails d) async {
     if (isNotTouchBasedDevice()) {
       return;
@@ -493,6 +499,7 @@ class _RawTouchGestureDetectorRegionState
     } else {
       // mobile
       _scale = 1;
+      _twoFingerMode = 0;
       // No idea why we need to set the view style to "" here.
       // bind.sessionSetViewStyle(sessionId: sessionId, value: "");
     }
