@@ -1730,6 +1730,8 @@ class _TouchIndicatorState extends State<TouchIndicator>
       behavior: HitTestBehavior.translucent,
       onPointerDown: _onPointerDown,
       child: Stack(
+        // expand：否则子控件拿到宽松约束，画面会塌缩成 0 尺寸（黑屏）
+        fit: StackFit.expand,
         children: [
           widget.child,
           if (pos != null)
