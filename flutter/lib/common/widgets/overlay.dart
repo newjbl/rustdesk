@@ -558,6 +558,27 @@ class IOSDraggableState extends State<IOSDraggable> {
   }
 }
 
+/// 客户端版本号只取一次，避免每次重建都走 FFI
+Future<String>? _versionFuture;
+Future<String> _loadVersion() => _versionFuture ??= bind.mainGetVersion();
+
+/// 版本号变化时重新渲染（初始为空，取到后刷新）
+class _VersionText extends StatelessWidget {
+  final double? fontSize;
+  const _VersionText({this.fontSize});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String>(
+      future: _loadVersion(),
+      builder: (context, snapshot) => AutoSizeText(
+        snapshot.data ?? "",
+        style: TextStyle(color: Colors.white, fontSize: fontSize),
+        maxLines: 1,
+      ),
+    );
+  }
+}
 class QualityMonitor extends StatelessWidget {
   final QualityMonitorModel qualityMonitorModel;
   final bool compact;
@@ -582,6 +603,24 @@ class QualityMonitor extends StatelessWidget {
                     color: rightColor ?? Colors.white,
                     fontSize: compact ? 9 : null),
                 maxLines: 1)),
+      ],
+    );
+  }
+
+  /// 与 _row 同样的排版，但右侧是一个自定义控件（用于异步版本号）
+  Widget _rowWidget(String info, Widget value) {
+    return Row(
+      children: [
+        Expanded(
+            flex: 8,
+            child: AutoSizeText(info,
+                style: TextStyle(
+                    color: Color.fromARGB(255, 210, 210, 210),
+                    fontSize: compact ? 9 : null),
+                textAlign: TextAlign.right,
+                maxLines: 1)),
+        Spacer(flex: 1),
+        Expanded(flex: 8, child: value),
       ],
     );
   }
@@ -616,6 +655,7 @@ class QualityMonitor extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _rowWidget("Ver", _VersionText(fontSize: compact ? 9 : null)),
                       _row("Type", _connType(qualityMonitorModel),
                           rightColor: _connColor(qualityMonitorModel)),
                       _row("Speed", qualityMonitorModel.data.speed ?? '-'),

@@ -459,13 +459,12 @@ class _RawTouchGestureDetectorRegionState
                     .toJson()));
       }
     } else {
-      // mobile：双指缩放；不再平移画面，改为竖向滚动远端
-      final prevScale = _scale;
-      ffi.canvasModel.updateScale(d.scale / _scale, d.focalPoint);
-      _scale = d.scale;
-      // 只有在没有明显捏合缩放时才当滚动处理，避免缩放时误触发
-      if ((d.scale - prevScale).abs() < 0.01) {
-        _mouseScrollIntegral += d.focalPointDelta.dy / 6;
+      // mobile：竖向两指拖动 = 滚动；捏合或其他方向 = 缩放
+      final delta = d.focalPointDelta;
+      final scaleChanged = (d.scale - _scale).abs() > 0.02;
+      final isVertical = delta.dy.abs() >= delta.dx.abs();
+      if (!scaleChanged && isVertical) {
+        _mouseScrollIntegral += delta.dy / 6;
         while (_mouseScrollIntegral > 1) {
           inputModel.scroll(1);
           _mouseScrollIntegral -= 1;
@@ -474,7 +473,10 @@ class _RawTouchGestureDetectorRegionState
           inputModel.scroll(-1);
           _mouseScrollIntegral += 1;
         }
+      } else {
+        ffi.canvasModel.updateScale(d.scale / _scale, d.focalPoint);
       }
+      _scale = d.scale;
     }
   }
 
