@@ -19,6 +19,7 @@ import android.os.Bundle
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.graphics.Rect
 import android.view.KeyEvent
 import android.view.WindowManager
 import android.media.MediaCodecInfo
@@ -251,6 +252,10 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         applyImmersiveFullscreen()
+        applyBottomGestureExclusion()
+        window.decorView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            applyBottomGestureExclusion()
+        }
         if (_rdClipboardManager == null) {
             _rdClipboardManager = RdClipboardManager(getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
             FFI.setClipboardManager(_rdClipboardManager!!)
@@ -286,6 +291,28 @@ class MainActivity : FlutterActivity() {
         super.onWindowFocusChanged(hasFocus)
         // 部分 ROM（华为等）在切回前台时会重新显示状态栏，这里重新压一次
         if (hasFocus) applyImmersiveFullscreen()
+    }
+
+    /**
+     * 把底部一条窄带从系统手势导航中排除。
+     * 沉浸全屏下屏幕底边是"上滑呼出导航栏"的感应区，落在那里的一次触摸会被系统吞掉，
+     * 表现为"点远端画面最下方没反应"。Android 10(Q) 起支持声明排除区。
+     */
+    private fun applyBottomGestureExclusion() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val decor = window.decorView
+        decor.post {
+            val w = decor.width
+            val h = decor.height
+            if (w <= 0 || h <= 0) return@post
+            val strip = (24 * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+            try {
+                decor.systemGestureExclusionRects =
+                    listOf(Rect(0, (h - strip).coerceAtLeast(0), w, h))
+            } catch (e: Throwable) {
+                Log.w(logTag, "applyBottomGestureExclusion failed: $e")
+            }
+        }
     }
 
     override fun onDestroy() {
