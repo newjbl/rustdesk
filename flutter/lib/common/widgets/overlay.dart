@@ -612,22 +612,23 @@ class QualityMonitor extends StatelessWidget {
     final rect = ffi.ffiModel.rect;
     final loc = ffi.cursorModel.dbgTapLocal;
     final rem = ffi.cursorModel.dbgTapRemote;
+    Widget line(String s) => AutoSizeText(
+          s,
+          style: const TextStyle(color: Colors.white, fontSize: 8),
+          maxLines: 1,
+        );
     return [
-      _row("s/o",
-          "${c.scale.toStringAsFixed(3)} ${c.x.toStringAsFixed(0)},${c.y.toStringAsFixed(0)}"),
-      _row(
-          "win",
-          size == null
-              ? '-'
-              : "${size.width.toStringAsFixed(0)}x${size.height.toStringAsFixed(0)}"),
-      _row(
-          "rect",
-          rect == null
-              ? '-'
-              : "${rect.width.toInt()}x${rect.height.toInt()}@${rect.left.toInt()},${rect.top.toInt()}"),
+      line("s=${c.scale.toStringAsFixed(3)} "
+          "o=${c.x.toStringAsFixed(0)},${c.y.toStringAsFixed(0)}"),
+      line(size == null
+          ? "win -"
+          : "win ${size.width.toStringAsFixed(0)}x${size.height.toStringAsFixed(0)}"),
+      line(rect == null
+          ? "rect -"
+          : "rect ${rect.width.toInt()}x${rect.height.toInt()}"),
       if (loc != null && rem != null)
-        _row("tap",
-            "${loc.dx.toStringAsFixed(0)},${loc.dy.toStringAsFixed(0)}>${rem.dx.toStringAsFixed(0)},${rem.dy.toStringAsFixed(0)}"),
+        line("tap ${loc.dx.toStringAsFixed(0)},${loc.dy.toStringAsFixed(0)}"
+            ">${rem.dx.toStringAsFixed(0)},${rem.dy.toStringAsFixed(0)}"),
     ];
   }
 

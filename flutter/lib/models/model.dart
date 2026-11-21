@@ -2447,12 +2447,11 @@ class CanvasModel with ChangeNotifier {
         _scale /= _devicePixelRatio;
       }
     }
-    // 手机端铺满屏幕：任何缩放模式都不允许小于"填满"比例，避免四周出现黑边
+    // 手机端三栏布局下，中间窗口尺寸已按远端比例定好，
+    // 缩放必须严格等于"铺满窗口"的比例。否则「原始尺寸」等模式会把画面
+    // 放大到超出窗口（例如 1/dpr = 0.43 > 0.34），四周被裁、边缘点不到。
     if (isMobile && parent.target?.imageModel.image != null) {
-      final mins = parent.target!.imageModel.minScale;
-      if (_scale < mins) {
-        _scale = mins;
-      }
+      _scale = parent.target!.imageModel.minScale;
     }
     _resetCanvasOffset(displayWidth, displayHeight);
     final overflow = _x < 0 || y < 0;
