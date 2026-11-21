@@ -603,6 +603,34 @@ class QualityMonitor extends StatelessWidget {
     return direct ? Colors.green : Colors.orange;
   }
 
+  // 临时调试读数：定位点击坐标偏移用
+  List<Widget> _dbgRows(QualityMonitorModel m) {
+    final ffi = m.parent.target;
+    if (ffi == null) return const [];
+    final c = ffi.canvasModel;
+    final size = c.mobileCanvasSize;
+    final rect = ffi.ffiModel.rect;
+    final loc = ffi.cursorModel.dbgTapLocal;
+    final rem = ffi.cursorModel.dbgTapRemote;
+    return [
+      _row("s/o",
+          "${c.scale.toStringAsFixed(3)} ${c.x.toStringAsFixed(0)},${c.y.toStringAsFixed(0)}"),
+      _row(
+          "win",
+          size == null
+              ? '-'
+              : "${size.width.toStringAsFixed(0)}x${size.height.toStringAsFixed(0)}"),
+      _row(
+          "rect",
+          rect == null
+              ? '-'
+              : "${rect.width.toInt()}x${rect.height.toInt()}@${rect.left.toInt()},${rect.top.toInt()}"),
+      if (loc != null && rem != null)
+        _row("tap",
+            "${loc.dx.toStringAsFixed(0)},${loc.dy.toStringAsFixed(0)}>${rem.dx.toStringAsFixed(0)},${rem.dy.toStringAsFixed(0)}"),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider.value(
       value: qualityMonitorModel,
@@ -630,6 +658,7 @@ class QualityMonitor extends StatelessWidget {
                       _row(
                           "Codec", qualityMonitorModel.data.codecFormat ?? '-'),
                       _row("Chroma", qualityMonitorModel.data.chroma ?? '-'),
+                      if (compact) ..._dbgRows(qualityMonitorModel),
                       if (qualityMonitorModel.webrtcTransport != null)
                         _row("Transport",
                             qualityMonitorModel.webrtcTransport!),

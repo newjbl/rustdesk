@@ -3332,6 +3332,10 @@ class CursorModel with ChangeNotifier {
   }
 
   // For touch mode
+  // 临时调试：最近一次点击的本地坐标与映射结果，用于定位坐标偏移
+  Offset? dbgTapLocal;
+  Offset? dbgTapRemote;
+
   Future<bool> move(double x, double y) async {
     if (shouldBlock(x, y)) {
       _lastIsBlocked = true;
@@ -3341,6 +3345,8 @@ class CursorModel with ChangeNotifier {
     if (!_moveLocalIfInRemoteRect(x, y)) {
       return false;
     }
+    dbgTapLocal = Offset(x, y);
+    dbgTapRemote = Offset(_x, _y);
     await parent.target?.inputModel.moveMouse(_x, _y);
     return true;
   }
@@ -3365,6 +3371,8 @@ class CursorModel with ChangeNotifier {
     final pos = _getNewPos(x, y, adjust);
     _x = pos.dx.clamp(rect.left, rect.right);
     _y = pos.dy.clamp(rect.top, rect.bottom);
+    dbgTapLocal = Offset(x, y);
+    dbgTapRemote = Offset(_x, _y);
     notifyListeners();
     await parent.target?.inputModel.moveMouse(_x, _y);
     return true;

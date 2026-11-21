@@ -841,9 +841,12 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
           return paints;
         }())));
 
+    // 触摸位置指示：手指按下的地方画一个黄点，便于核对点击与远端光标的偏差
+    final centerWithIndicator = TouchIndicator(child: center);
     final centerWithGesture = inputModel.isPhysicalMouse.value
-        ? center
-        : RawTouchGestureDetectorRegion(child: center, ffi: gFFI);
+        ? centerWithIndicator
+        : RawTouchGestureDetectorRegion(
+            child: centerWithIndicator, ffi: gFFI);
 
     // 固定三栏：左右栏宽度固定，中间窗口宽度固定，缩放只影响窗口内内容
     return Row(
@@ -1685,5 +1688,71 @@ class FABLocation extends FloatingActionButtonLocation {
   Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
     final offset = location.getOffset(scaffoldGeometry);
     return Offset(offset.dx + offsetX, offset.dy + offsetY);
+  }
+}
+
+/// 触摸位置指示器：手指按下的位置画一个黄色圆点并淡出，
+/// 便于核对"手指点到的位置"与"远端光标落点"是否一致。
+class TouchIndicator extends StatefulWidget {
+  final Widget child;
+  const TouchIndicator({Key? key, required this.child}) : super(key: key);
+
+  @override
+  State<TouchIndicator> createState() => _TouchIndicatorState();
+}
+
+class _TouchIndicatorState extends State<TouchIndicator>
+    with SingleTickerProviderStateMixin {
+  static const double _size = 22;
+  Offset? _pos;
+  late final AnimationController _fade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+    value: 0,
+  );
+
+  void _onPointerDown(PointerDownEvent e) {
+    setState(() => _pos = e.localPosition);
+    _fade.value = 1;
+    _fade.reverse();
+  }
+
+  @override
+  void dispose() {
+    _fade.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pos = _pos;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _onPointerDown,
+      child: Stack(
+        children: [
+          widget.child,
+          if (pos != null)
+            Positioned(
+              left: pos.dx - _size / 2,
+              top: pos.dy - _size / 2,
+              child: IgnorePointer(
+                child: FadeTransition(
+                  opacity: _fade,
+                  child: Container(
+                    width: _size,
+                    height: _size,
+                    decoration: BoxDecoration(
+                      color: Colors.yellow.withOpacity(0.85),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black54, width: 1),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
