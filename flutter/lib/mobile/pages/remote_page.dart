@@ -768,7 +768,15 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     if (centerWidth > screenSize.width) centerWidth = screenSize.width;
     final sideWidth = (screenSize.width - centerWidth) / 2.0;
     // 画布尺寸注入：缩放/居中/边界计算都以中间窗口为准
-    gFFI.canvasModel.setMobileCanvasSize(Size(centerWidth, screenSize.height));
+    final canvasSize = Size(centerWidth, screenSize.height);
+    if (gFFI.canvasModel.mobileCanvasSize != canvasSize) {
+      gFFI.canvasModel.setMobileCanvasSize(canvasSize);
+      // 尺寸变了必须按新尺寸重算缩放：否则 scale 仍按全屏宽度算，
+      // 画面会超出中间窗口，远端画面下方/右侧区域点在窗口外而失效。
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) gFFI.canvasModel.updateViewStyle();
+      });
+    }
 
     final center = ClipRect(child: Container(
         color: MyTheme.canvasColor,
