@@ -3331,10 +3331,6 @@ class CursorModel with ChangeNotifier {
   }
 
   // For touch mode
-  // 临时调试：最近一次点击的本地坐标与映射结果，用于定位坐标偏移
-  Offset? dbgTapLocal;
-  Offset? dbgTapRemote;
-
   Future<bool> move(double x, double y) async {
     if (shouldBlock(x, y)) {
       _lastIsBlocked = true;
@@ -3344,8 +3340,6 @@ class CursorModel with ChangeNotifier {
     if (!_moveLocalIfInRemoteRect(x, y)) {
       return false;
     }
-    dbgTapLocal = Offset(x, y);
-    dbgTapRemote = Offset(_x, _y);
     await parent.target?.inputModel.moveMouse(_x, _y);
     return true;
   }
@@ -3354,28 +3348,6 @@ class CursorModel with ChangeNotifier {
     await parent.target?.inputModel.moveMouse(_x, _y);
   }
 
-  /// 触摸点映射到远端屏幕之外时（画面边缘、底边最常见），
-  /// 夹取到最近的边界点，避免点击被直接丢弃。
-  Future<bool> moveClamped(double x, double y) async {
-    if (shouldBlock(x, y)) {
-      _lastIsBlocked = true;
-      return false;
-    }
-    _lastIsBlocked = false;
-    final rect = parent.target?.ffiModel.rect;
-    if (rect == null) {
-      return false;
-    }
-    final adjust = parent.target?.canvasModel.getAdjustY() ?? 0;
-    final pos = _getNewPos(x, y, adjust);
-    _x = pos.dx.clamp(rect.left, rect.right);
-    _y = pos.dy.clamp(rect.top, rect.bottom);
-    dbgTapLocal = Offset(x, y);
-    dbgTapRemote = Offset(_x, _y);
-    notifyListeners();
-    await parent.target?.inputModel.moveMouse(_x, _y);
-    return true;
-  }
   bool isInRemoteRect(Offset offset) {
     return getRemotePosInRect(offset) != null;
   }

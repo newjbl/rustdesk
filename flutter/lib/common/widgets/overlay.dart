@@ -604,33 +604,6 @@ class QualityMonitor extends StatelessWidget {
   }
 
   // 临时调试读数：定位点击坐标偏移用
-  List<Widget> _dbgRows(QualityMonitorModel m) {
-    final ffi = m.parent.target;
-    if (ffi == null) return const [];
-    final c = ffi.canvasModel;
-    // 用 getSize()（实际生效的画布尺寸）而不是注入值，便于确认两者是否一致
-    final size = c.getSize();
-    final rect = ffi.ffiModel.rect;
-    final loc = ffi.cursorModel.dbgTapLocal;
-    final rem = ffi.cursorModel.dbgTapRemote;
-    Widget line(String s) => AutoSizeText(
-          s,
-          style: const TextStyle(color: Colors.white, fontSize: 8),
-          maxLines: 1,
-        );
-    return [
-      line("s=${c.scale.toStringAsFixed(3)} "
-          "o=${c.x.toStringAsFixed(0)},${c.y.toStringAsFixed(0)}"),
-      line("win ${size.width.toStringAsFixed(0)}x${size.height.toStringAsFixed(0)}"),
-      line(rect == null
-          ? "rect -"
-          : "rect ${rect.width.toInt()}x${rect.height.toInt()}"),
-      if (loc != null && rem != null)
-        line("tap ${loc.dx.toStringAsFixed(0)},${loc.dy.toStringAsFixed(0)}"
-            ">${rem.dx.toStringAsFixed(0)},${rem.dy.toStringAsFixed(0)}"),
-    ];
-  }
-
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider.value(
       value: qualityMonitorModel,
@@ -658,7 +631,6 @@ class QualityMonitor extends StatelessWidget {
                       _row(
                           "Codec", qualityMonitorModel.data.codecFormat ?? '-'),
                       _row("Chroma", qualityMonitorModel.data.chroma ?? '-'),
-                      if (compact) ..._dbgRows(qualityMonitorModel),
                       if (qualityMonitorModel.webrtcTransport != null)
                         _row("Transport",
                             qualityMonitorModel.webrtcTransport!),

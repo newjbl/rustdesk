@@ -740,7 +740,6 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
       !gFFI.inputModel.relativeMouseMode.value;
 
   // 左侧快捷键面板：先占位，后续在 _leftShortcutItems 里补充具体按键。
-  static const double kLeftToolBarWidth = 48;
   Widget getLeftToolBar() {
     return Material(
       elevation: 10,
@@ -771,7 +770,7 @@ class _RemotePageState extends State<RemotePage> with WidgetsBindingObserver {
     // 屏幕最底部约 10dp 是系统手势区，触摸会被系统取消（实测光标下限停在
     // y=1051，到不了 1080）。这里给中间窗口留出底部安全边，让远端画面的
     // 最底一行落在死区之上；画面按剩余高度等比缩放，比例仍然正确。
-    final bottomInset = MediaQuery.of(context).padding.bottom + 24.0;
+    final bottomInset = MediaQuery.of(context).padding.bottom + 12.0;
     final canvasHeight = (screenSize.height - bottomInset).clamp(1.0, screenSize.height);
     var centerWidth = canvasHeight * remoteAspect;
     if (centerWidth > screenSize.width) centerWidth = screenSize.width;

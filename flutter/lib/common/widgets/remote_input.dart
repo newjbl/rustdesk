@@ -88,8 +88,6 @@ class RawTouchGestureDetectorRegion extends StatefulWidget {
 class _RawTouchGestureDetectorRegionState
     extends State<RawTouchGestureDetectorRegion> {
   Offset _cacheLongPressPosition = Offset(0, 0);
-  // Timestamp of the last long press event.
-  int _cacheLongPressPositionTs = 0;
   double _mouseScrollIntegral = 0; // mouse scroll speed controller
   double _scale = 1;
 
@@ -163,13 +161,8 @@ class _RawTouchGestureDetectorRegionState
       return;
     }
     if (handleTouch) {
-      var isMoved =
+      final isMoved =
           await ffi.cursorModel.move(d.localPosition.dx, d.localPosition.dy);
-      if (!isMoved) {
-        // 画面边缘映射到远端之外时会被丢弃，夹取到最近边界点再点击
-        isMoved = await ffi.cursorModel
-            .moveClamped(d.localPosition.dx, d.localPosition.dy);
-      }
       if (isMoved) {
         // If pan already handled 'down', don't send it again.
         if (lastTapDownDetails != null && !_touchModePanStarted) {
@@ -245,7 +238,6 @@ class _RawTouchGestureDetectorRegionState
       if (!ffi.cursorModel.isInRemoteRect(d.localPosition)) {
         return;
       }
-      _cacheLongPressPositionTs = DateTime.now().millisecondsSinceEpoch;
       if (ffiModel.isPeerMobile) {
         await ffi.cursorModel
             .move(_cacheLongPressPosition.dx, _cacheLongPressPosition.dy);
@@ -358,7 +350,6 @@ class _RawTouchGestureDetectorRegionState
   }
 
   onOneFingerPanStart(BuildContext context, DragStartDetails d) async {
-    final TapDownDetails? lastTapDownDetails = _lastTapDownDetails;
     _lastTapDownDetails = null;
     lastDeviceKind = d.kind ?? lastDeviceKind;
     if (isNotTouchBasedDevice()) {
