@@ -586,6 +586,23 @@ class QualityMonitor extends StatelessWidget {
     );
   }
 
+  // 连接方式：直连(P2P) 还是 中继
+  String _connType(QualityMonitorModel m) {
+    final ffi = m.parent.target;
+    if (ffi == null) return '-';
+    final direct = ffi.ffiModel.direct;
+    if (direct == null) return '-';
+    if (!direct) return 'Relay';
+    final streamType = ffi.ffiModel.cachedPeerData.streamType;
+    return streamType.isEmpty ? 'P2P' : 'P2P ($streamType)';
+  }
+
+  Color _connColor(QualityMonitorModel m) {
+    final direct = m.parent.target?.ffiModel.direct;
+    if (direct == null) return Colors.white;
+    return direct ? Colors.green : Colors.orange;
+  }
+
   @override
   Widget build(BuildContext context) => ChangeNotifierProvider.value(
       value: qualityMonitorModel,
@@ -599,6 +616,8 @@ class QualityMonitor extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _row("Type", _connType(qualityMonitorModel),
+                          rightColor: _connColor(qualityMonitorModel)),
                       _row("Speed", qualityMonitorModel.data.speed ?? '-'),
                       _row("FPS", qualityMonitorModel.data.fps ?? '-'),
                       // let delay be 0 if fps is 0
